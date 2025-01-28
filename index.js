@@ -6,6 +6,9 @@ const dotenv = require("dotenv");
 const teamMemberRoutes = require("./routes/teamMemberRoutes");
 const bookRoutes = require("./routes/bookRoutes");
 const donationRoutes = require("./routes/donationCampaignRoutes");
+const socialEventRoutes = require("./routes/socialEventRoutes");
+const newsArticleRoutes = require("./routes/newsArticleRoutes");
+const volunteerRoutes = require("./routes/volunteerRoutes");
 
 const app = express();
 dotenv.config();
@@ -25,6 +28,9 @@ app.get("/", (req, res) => {
 app.use("/api", teamMemberRoutes);
 app.use("/api", bookRoutes);
 app.use("/api", donationRoutes);
+app.use("/api", socialEventRoutes);
+app.use("/api", newsArticleRoutes);
+app.use("/api", volunteerRoutes);
 
 app.listen(process.env.PORT, () => {
 console.clear()

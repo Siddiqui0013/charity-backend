@@ -3,53 +3,148 @@ const router = express.Router();
 const TeamMember = require("../models/TeamMember");
 
 router.post("/team-members", async (req, res) => {
-	try {
-		const teamMember = new TeamMember(req.body);
-		await teamMember.save();
-		const response = {
-			success: true,
-			message: "Team member created successfully",
-			teamMember,
-		};
-		res.status(201).json(response);
-	} catch (err) {
-		const response = {
-			success: false,
-			message: "Failed to create team member",
-			error: err.message,
-		};
-		res.status(400).json(response);
-	}
+    try {
+        const { name, role, image } = req.body;
+
+        if (!name || !role) {
+            return res.status(400).json({
+                success: false,
+                message: "Name and role are required.",
+            });
+        }
+
+        const newTeamMember = new TeamMember({ name, role, image });
+        const savedTeamMember = await newTeamMember.save();
+
+        res.status(201).json({
+            success: true,
+            message: "Team member created successfully.",
+            data: savedTeamMember,
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "An error occurred while creating the team member.",
+            error: err.message,
+        });
+    }
 });
 
 router.get("/team-members", async (req, res) => {
-	try {
-		const teamMembers = await TeamMember.find();
-		const totalUsers = teamMembers.length;
-		const response = {
-			success: true,
-			message: "Team members fetched successfully",
-			totalUsers,
-			teamMembers,
-		};
-		res.status(200).json(response);
-	} catch (err) {
-		const response = {
-			success: false,
-			message: "Failed to fetch team members",
-			error: err.message,
-		};
-		res.status(500).json(response);
-	}
+    try {
+        const teamMembers = await TeamMember.find();
+
+        if (teamMembers.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "No team members found.",
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Team members fetched successfully.",
+            total: teamMembers.length,
+            data: teamMembers,
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "An error occurred while fetching team members.",
+            error: err.message,
+        });
+    }
+});
+
+router.get("/team-members/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const teamMember = await TeamMember.findById(id);
+        if (!teamMember) {
+            return res.status(404).json({
+                success: false,
+                message: `No team member found with ID: ${id}`,
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Team member fetched successfully.",
+            data: teamMember,
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "An error occurred while fetching the team member.",
+            error: err.message,
+        });
+    }
+});
+
+router.put("/team-members/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, role, image } = req.body;
+
+        if (!name && !role && !image) {
+            return res.status(400).json({
+                success: false,
+                message: "At least one field (name, role, or image) must be provided to update.",
+            });
+        }
+
+        const updatedTeamMember = await TeamMember.findByIdAndUpdate(
+            id,
+            { name, role, image },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedTeamMember) {
+            return res.status(404).json({
+                success: false,
+                message: `No team member found with ID: ${id}`,
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Team member updated successfully.",
+            data: updatedTeamMember,
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "An error occurred while updating the team member.",
+            error: err.message,
+        });
+    }
 });
 
 router.delete("/team-members/:id", async (req, res) => {
-	try {
-		await TeamMember.findByIdAndDelete(req.params.id);
-		res.status(204).send();
-	} catch (err) {
-		res.status(500).json({ error: err.message });
-	}
+    try {
+        const { id } = req.params;
+
+        const deletedTeamMember = await TeamMember.findByIdAndDelete(id);
+        if (!deletedTeamMember) {
+            return res.status(404).json({
+                success: false,
+                message: `No team member found with ID: ${id}`,
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Team member deleted successfully.",
+            data: deletedTeamMember,
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "An error occurred while deleting the team member.",
+            error: err.message,
+        });
+    }
 });
 
 module.exports = router;

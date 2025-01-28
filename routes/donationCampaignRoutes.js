@@ -3,63 +3,137 @@ const router = express.Router();
 const Donations = require("../models/DonationCampaign");
 
 router.post("/donations", async (req, res) => {
-  try {
-    const { title, description, goal } = req.body;
+    try {
+        const { title, description, goal } = req.body;
 
-    if (!title || !description || !goal) {
-      return res.status(400).json({
-        success: false,
-        message: "Title, description, and goal are required.",
-      });
+        if (!title || !description || !goal) {
+            return res.status(400).json({
+                success: false,
+                message: "Title, description, and goal are required.",
+            });
+        }
+
+        const donation = new Donations({ title, description, goal });
+        const savedDonation = await donation.save();
+
+        res.status(201).json({
+            success: true,
+            message: "Donation campaign created successfully.",
+            data: savedDonation,
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to create donation campaign.",
+            error: err.message,
+        });
     }
-
-    const donation = new Donations({
-      title,
-      description,
-      goal,
-    });
-
-    await donation.save();
-
-    const response = {
-      success: true,
-      message: "Donation campaign created successfully",
-      donation,
-    };
-
-    res.status(201).json(response);
-  } catch (err) {
-    const response = {
-      success: false,
-      message: "Failed to create donation campaign",
-      error: err.message,
-    };
-    res.status(400).json(response);
-  }
 });
 
 router.get("/donations", async (req, res) => {
-  try {
-    const donations = await Donations.find();
-    const totalDonations = donations.length;
+    try {
+        const donations = await Donations.find();
+        res.status(200).json({
+            success: true,
+            message: "Donation campaigns fetched successfully.",
+            total: donations.length,
+            data: donations,
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch donation campaigns.",
+            error: err.message,
+        });
+    }
+});
 
-    const response = {
-      success: true,
-      message: "Donation campaigns fetched successfully",
-      totalDonations,
-      donations,
-    };
+router.get("/donations/:id", async (req, res) => {
+    try {
+        const donation = await Donations.findById(req.params.id);
 
-    res.status(200).json(response);
-  } catch (err) {
-    const response = {
-      success: false,
-      message: "Failed to fetch donation campaigns",
-      error: err.message,
-    };
+        if (!donation) {
+            return res.status(404).json({
+                success: false,
+                message: `No donation campaign found with ID: ${req.params.id}`,
+            });
+        }
 
-    res.status(500).json(response);
-  }
+        res.status(200).json({
+            success: true,
+            message: "Donation campaign fetched successfully.",
+            data: donation,
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch donation campaign.",
+            error: err.message,
+        });
+    }
+});
+
+router.put("/donations/:id", async (req, res) => {
+    try {
+        const { title, description, goal } = req.body;
+
+        if (!title && !description && !goal) {
+            return res.status(400).json({
+                success: false,
+                message: "At least one field (title, description, or goal) is required to update.",
+            });
+        }
+
+        const updatedDonation = await Donations.findByIdAndUpdate(
+            req.params.id,
+            { title, description, goal },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedDonation) {
+            return res.status(404).json({
+                success: false,
+                message: `No donation campaign found with ID: ${req.params.id}`,
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Donation campaign updated successfully.",
+            data: updatedDonation,
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to update donation campaign.",
+            error: err.message,
+        });
+    }
+});
+
+router.delete("/donations/:id", async (req, res) => {
+    try {
+        const deletedDonation = await Donations.findByIdAndDelete(req.params.id);
+
+        if (!deletedDonation) {
+            return res.status(404).json({
+                success: false,
+                message: `No donation campaign found with ID: ${req.params.id}`,
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Donation campaign deleted successfully.",
+            data: deletedDonation,
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to delete donation campaign.",
+            error: err.message,
+        });
+    }
 });
 
 module.exports = router;
