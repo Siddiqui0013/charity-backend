@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Books = require("../models/Book");
 
-router.post("/books", async (req, res) => {
+router.post("/book", async (req, res) => {
     try {
         const { title, description } = req.body;
 
@@ -55,7 +55,7 @@ router.get("/books", async (req, res) => {
     }
 });
 
-router.get("/books/:id", async (req, res) => {
+router.get("/book/:id", async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -81,7 +81,7 @@ router.get("/books/:id", async (req, res) => {
     }
 });
 
-router.put("/books/:id", async (req, res) => {
+router.put("/book/:id", async (req, res) => {
     try {
         const { id } = req.params;
         const { title, description } = req.body;
@@ -120,7 +120,7 @@ router.put("/books/:id", async (req, res) => {
     }
 });
 
-router.delete("/books/:id", async (req, res) => {
+router.delete("/book/:id", async (req, res) => {
     try {
         const { id } = req.params;
 

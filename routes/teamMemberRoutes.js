@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const TeamMember = require("../models/TeamMember");
 
-router.post("/team-members", async (req, res) => {
+router.post("/team-member", async (req, res) => {
     try {
         const { name, role, image } = req.body;
 
@@ -56,7 +56,7 @@ router.get("/team-members", async (req, res) => {
     }
 });
 
-router.get("/team-members/:id", async (req, res) => {
+router.get("/team-member/:id", async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -82,7 +82,7 @@ router.get("/team-members/:id", async (req, res) => {
     }
 });
 
-router.put("/team-members/:id", async (req, res) => {
+router.put("/team-member/:id", async (req, res) => {
     try {
         const { id } = req.params;
         const { name, role, image } = req.body;
@@ -121,7 +121,7 @@ router.put("/team-members/:id", async (req, res) => {
     }
 });
 
-router.delete("/team-members/:id", async (req, res) => {
+router.delete("/team-member/:id", async (req, res) => {
     try {
         const { id } = req.params;
 

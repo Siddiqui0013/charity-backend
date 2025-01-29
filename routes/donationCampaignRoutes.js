@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Donations = require("../models/DonationCampaign");
 
-router.post("/donations", async (req, res) => {
+router.post("/donation", async (req, res) => {
     try {
         const { title, description, goal } = req.body;
 
@@ -48,7 +48,7 @@ router.get("/donations", async (req, res) => {
     }
 });
 
-router.get("/donations/:id", async (req, res) => {
+router.get("/donation/:id", async (req, res) => {
     try {
         const donation = await Donations.findById(req.params.id);
 
@@ -73,7 +73,7 @@ router.get("/donations/:id", async (req, res) => {
     }
 });
 
-router.put("/donations/:id", async (req, res) => {
+router.put("/donation/:id", async (req, res) => {
     try {
         const { title, description, goal } = req.body;
 
@@ -111,7 +111,7 @@ router.put("/donations/:id", async (req, res) => {
     }
 });
 
-router.delete("/donations/:id", async (req, res) => {
+router.delete("/donation/:id", async (req, res) => {
     try {
         const deletedDonation = await Donations.findByIdAndDelete(req.params.id);
 
