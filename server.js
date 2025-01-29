@@ -9,6 +9,7 @@ const donationRoutes = require("./routes/donationCampaignRoutes");
 const socialEventRoutes = require("./routes/socialEventRoutes");
 const newsArticleRoutes = require("./routes/newsArticleRoutes");
 const volunteerRoutes = require("./routes/volunteerRoutes");
+const AnalyticsRoutes = require("./routes/analyticsRoutes")
 
 const app = express();
 dotenv.config();
@@ -31,6 +32,7 @@ app.use("/api", donationRoutes);
 app.use("/api", socialEventRoutes);
 app.use("/api", newsArticleRoutes);
 app.use("/api", volunteerRoutes);
+app.use("/api", AnalyticsRoutes);
 
 app.listen(process.env.PORT, () => {
 console.clear()
