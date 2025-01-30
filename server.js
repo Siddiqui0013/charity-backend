@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
+const cookieParser = require("cookie-parser");
 
 const teamMemberRoutes = require("./routes/teamMemberRoutes");
 const bookRoutes = require("./routes/bookRoutes");
@@ -10,12 +11,19 @@ const socialEventRoutes = require("./routes/socialEventRoutes");
 const newsArticleRoutes = require("./routes/newsArticleRoutes");
 const volunteerRoutes = require("./routes/volunteerRoutes");
 const AnalyticsRoutes = require("./routes/analyticsRoutes")
+const AuthRoutes = require("./routes/authRoute");
 
 const app = express();
 dotenv.config();
 
-app.use(cors());
+app.use(cors(
+  {
+    origin: "*",
+    credentials: true
+  }
+));
 app.use(express.json());
+app.use(cookieParser());
 
 mongoose
   .connect(`${process.env.MONGO_URI}/${process.env.DB_NAME}` )
@@ -33,8 +41,11 @@ app.use("/api", socialEventRoutes);
 app.use("/api", newsArticleRoutes);
 app.use("/api", volunteerRoutes);
 app.use("/api", AnalyticsRoutes);
+app.use("/admin", AuthRoutes);
+
 
 app.listen(process.env.PORT, () => {
 console.clear()
   console.log(`Server is running on port ${process.env.PORT}`);
 });
+

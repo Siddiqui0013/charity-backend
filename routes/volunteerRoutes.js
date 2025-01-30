@@ -1,8 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const Volunteer = require("../models/Volunteer");
+const verifyAdmin = require("../middleWare/verifyAdmin");
 
-router.post("/volunteers", async (req, res) => {
+router.post("/volunteer", verifyAdmin, async (req, res) => {
   try {
     const { title } = req.body;
 
@@ -48,7 +49,7 @@ router.get("/volunteers", async (req, res) => {
   }
 });
 
-router.get("/volunteers/:id", async (req, res) => {
+router.get("/volunteer/:id", async (req, res) => {
   try {
     const volunteer = await Volunteer.findById(req.params.id);
 
@@ -73,7 +74,7 @@ router.get("/volunteers/:id", async (req, res) => {
   }
 });
 
-router.put("/volunteers/:id", async (req, res) => {
+router.put("/volunteer/:id", async (req, res) => {
   try {
     const { title } = req.body;
 
@@ -104,7 +105,7 @@ router.put("/volunteers/:id", async (req, res) => {
   }
 });
 
-router.delete("/volunteers/:id", async (req, res) => {
+router.delete("/volunteer/:id", async (req, res) => {
   try {
     const deletedVolunteer = await Volunteer.findByIdAndDelete(req.params.id);
 
@@ -124,6 +125,24 @@ router.delete("/volunteers/:id", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to delete volunteer",
+      error: err.message,
+    });
+  }
+});
+
+router.delete("/deleteVolunteers", async (req, res) => {
+  try {
+    const result = await Volunteer.deleteMany({});
+
+    res.status(200).json({
+      success: true,
+      message: "All entries have been deleted successfully.",
+      deletedCount: result.deletedCount, 
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while deleting entries.",
       error: err.message,
     });
   }
