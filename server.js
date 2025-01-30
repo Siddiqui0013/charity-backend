@@ -16,12 +16,7 @@ const AuthRoutes = require("./routes/authRoute");
 const app = express();
 dotenv.config();
 
-app.use(cors(
-  {
-    origin: "*",
-    credentials: true
-  }
-));
+app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 
