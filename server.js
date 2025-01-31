@@ -36,7 +36,7 @@ app.use("/api", socialEventRoutes);
 app.use("/api", newsArticleRoutes);
 app.use("/api", volunteerRoutes);
 app.use("/api", AnalyticsRoutes);
-app.use("/admin", AuthRoutes);
+app.use("/api", AuthRoutes);
 
 
 app.listen(process.env.PORT, () => {
