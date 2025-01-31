@@ -21,12 +21,11 @@ const newsArticleSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  link: {
+  image: {
     type: String,
-  },
-  Image: {
-    type: String,
-    default: `https://placecats.com/${cats[Math.floor(Math.random() * cats.length)]}/300/200`,
+    default: function () {
+      return `https://placecats.com/${cats[Math.floor(Math.random() * cats.length)]}/300/200`;
+    }
   },
 
 });

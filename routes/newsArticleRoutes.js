@@ -2,18 +2,18 @@ const express = require("express");
 const router = express.Router();
 const NewsArticle = require("../models/NewsArticles");
 
-router.post("/news-articles", async (req, res) => {
+router.post("/news-article", async (req, res) => {
   try {
-    const { title, description, link } = req.body;
+    const { title, description } = req.body;
 
-    if (!title || !description || !link) {
+    if (!title || !description ) {
       return res.status(400).json({
         success: false,
-        message: "Title, description, and link are required.",
+        message: "Title, description are required.",
       });
     }
 
-    const newsArticle = new NewsArticle({ title, description, link });
+    const newsArticle = new NewsArticle({ title, description });
     await newsArticle.save();
 
     res.status(201).json({
@@ -48,7 +48,7 @@ router.get("/news-articles", async (req, res) => {
   }
 });
 
-router.get("/news-articles/:id", async (req, res) => {
+router.get("/news-article/:id", async (req, res) => {
   try {
     const newsArticle = await NewsArticle.findById(req.params.id);
 
@@ -73,7 +73,7 @@ router.get("/news-articles/:id", async (req, res) => {
   }
 });
 
-router.put("/news-articles/:id", async (req, res) => {
+router.put("/news-article/:id", async (req, res) => {
   try {
     const { title, description, link } = req.body;
 
@@ -104,7 +104,7 @@ router.put("/news-articles/:id", async (req, res) => {
   }
 });
 
-router.delete("/news-articles/:id", async (req, res) => {
+router.delete("/news-article/:id", async (req, res) => {
   try {
     const deletedArticle = await NewsArticle.findByIdAndDelete(req.params.id);
 

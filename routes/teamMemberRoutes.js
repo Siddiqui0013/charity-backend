@@ -13,7 +13,7 @@ router.post("/team-member", async (req, res) => {
             });
         }
 
-        const newTeamMember = new TeamMember({ name, role, image });
+        const newTeamMember = new TeamMember({ name, role, image  });
         const savedTeamMember = await newTeamMember.save();
 
         res.status(201).json({

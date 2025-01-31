@@ -3,7 +3,7 @@ const router = express.Router();
 const Volunteer = require("../models/Volunteer");
 const verifyAdmin = require("../middleWare/verifyAdmin");
 
-router.post("/volunteer", verifyAdmin, async (req, res) => {
+router.post("/volunteer", async (req, res) => {
   try {
     const { title } = req.body;
 

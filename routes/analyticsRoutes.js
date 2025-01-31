@@ -3,26 +3,26 @@ const router = express.Router();
 
 const Books = require("../models/Book");
 const Donations = require("../models/DonationCampaign");
-// const NewsArticles = require("../models/NewsArticles");
-// const SocialEvents = require("../models/SocialEvent");
+const NewsArticles = require("../models/NewsArticles");
+const SocialEvents = require("../models/SocialEvent");
 const TeamMembers = require("../models/TeamMember");
-// const Volunteers = require("../models/Volunteer");
+const Volunteers = require("../models/Volunteer");
 
 router.get("/count", async (req, res) => {
   try {
     const [
       totalDonations,
       totalBooks,
-    //   totalNewsArticles,
-    //   totalSocialEvents,
-    //   totalVolunteers,
+      totalNewsArticles,
+      totalSocialEvents,
+      totalVolunteers,
       totalTeamMembers
     ] = await Promise.all([
       Donations.countDocuments(),
       Books.countDocuments(),
-    //   NewsArticles.countDocuments(),
-    //   SocialEvents.countDocuments(),
-    //   Volunteers.countDocuments(),
+      NewsArticles.countDocuments(),
+      SocialEvents.countDocuments(),
+      Volunteers.countDocuments(),
       TeamMembers.countDocuments()
     ]);
 
@@ -33,7 +33,9 @@ router.get("/count", async (req, res) => {
         totalDonations,
         // totalPayments,
         totalBooks,
-        // totalVolunteers,
+        totalVolunteers,
+        totalNewsArticles,
+        totalSocialEvents,
         totalTeamMembers,
         // total: totalDonations + totalPayments + totalBooks + totalVolunteers + totalTeamMembers,
       },

@@ -22,7 +22,9 @@ const teamMemberSchema = new mongoose.Schema({
     },
     image: {
         type: String,
-        default: `https://placecats.com/${cats[Math.floor(Math.random() * cats.length)]}/300/200`,
+        default: function () {
+            return `https://placecats.com/${cats[Math.floor(Math.random() * cats.length)]}/300/200`;
+    }
     },
     });
 
