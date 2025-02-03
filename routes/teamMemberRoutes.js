@@ -39,25 +39,31 @@ router.post("/team-member", verifyAdmin, async (req, res) => {
 
 router.get("/team-members", async (req, res) => {
     try {
-        const teamMembers = await TeamMember.find();
+        const page = parseInt(req.query.page) || 1;
+        const per_page = parseInt(req.query.per_page) || 10;
 
-        if (teamMembers.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "No team members found.",
-            });
-        }
+        const skip = (page - 1) * per_page;
+
+        const totalMembers = await TeamMember.countDocuments();
+
+        const memebers = await TeamMember.find()
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(per_page);
 
         res.status(200).json({
             success: true,
-            message: "Team members fetched successfully.",
-            total: teamMembers.length,
-            data: teamMembers,
+            message: "Books fetched successfully.",
+            current_page: page,
+            per_page: per_page,
+            total: totalMembers,
+            total_pages: Math.ceil(totalMembers / per_page),
+            data: memebers,
         });
     } catch (err) {
         res.status(500).json({
             success: false,
-            message: "An error occurred while fetching team members.",
+            message: "Failed to fetch Team Members.",
             error: err.message,
         });
     }
@@ -89,44 +95,52 @@ router.get("/team-member/:id", async (req, res) => {
     }
 });
 
-router.put("/team-member/:id", async (req, res) => {
+router.put("/team-member/:id", verifyAdmin, upload.single("picture"), async (req, res) => {
     try {
-        const { id } = req.params;
-        const { name, role, image } = req.body;
+        const { title, description, picture } = req.body;
+        const book = await Books.findById(req.params.id);
 
-        if (!name && !role && !image) {
-            return res.status(400).json({
+        if (!book) {
+            return res.status(404).json({
                 success: false,
-                message: "At least one field (name, role, or image) must be provided to update.",
+                message: `No book found with ID: ${req.params.id}`,
             });
         }
 
-        const updatedTeamMember = await TeamMember.findByIdAndUpdate(
-            id,
-            { name, role, image },
+        const updateData = {
+            ...(title && { title }),
+            ...(description && { description }),
+        };
+
+        if (req.file) {
+            if (book.picture) {
+                const publicId = donation.picture.split("/").pop().split(".")[0];
+                await deleteFromCloudinary(publicId);
+            }
+            const result = await uploadOnCloudinary(req.file.path);
+            updateData.picture = result.url;
+        }
+
+        const updatedBook = await Books.findByIdAndUpdate(
+            req.params.id,
+            updateData,
             { new: true, runValidators: true }
         );
 
-        if (!updatedTeamMember) {
-            return res.status(404).json({
-                success: false,
-                message: `No team member found with ID: ${id}`,
-            });
-        }
-
         res.status(200).json({
             success: true,
-            message: "Team member updated successfully.",
-            data: updatedTeamMember,
+            message: "Book updated successfully.",
+            data: updatedBook,
         });
     } catch (err) {
         res.status(500).json({
             success: false,
-            message: "An error occurred while updating the team member.",
+            message: "Failed to update book.",
             error: err.message,
         });
     }
 });
+
 
 router.delete("/team-member/:id", async (req, res) => {
     try {

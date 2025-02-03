@@ -97,7 +97,7 @@ router.get("/book/:id", async (req, res) => {
     }
 });
 
-router.put("/donation/:id", verifyAdmin, upload.single("picture"), async (req, res) => {
+router.put("/book/:id", verifyAdmin, upload.single("picture"), async (req, res) => {
     try {
         const { title, description } = req.body;
         const book = await Books.findById(req.params.id);
