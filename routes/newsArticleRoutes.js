@@ -50,21 +50,35 @@ router.post("/news-article", verifyAdmin, upload.single("picture"), async (req, 
 });
 
 router.get("/news-articles", async (req, res) => {
-  try {
-    const newsArticles = await NewsArticle.find();
-    res.status(200).json({
-      success: true,
-      message: "News articles fetched successfully",
-      totalArticles: newsArticles.length,
-      newsArticles,
-    });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch news articles",
-      error: err.message,
-    });
-  }
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const per_page = parseInt(req.query.per_page) || 10;
+
+        const skip = (page - 1) * per_page;
+
+        const totalArticels = await NewsArticle.countDocuments();
+
+        const articles = await NewsArticle.find()
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(per_page);
+
+        res.status(200).json({
+            success: true,
+            message: "Articles fetched successfully.",
+            current_page: page,
+            per_page: per_page,
+            total: totalArticels,
+            total_pages: Math.ceil(totalArticels / per_page),
+            data: articles,
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch Books.",
+            error: err.message,
+        });
+    }
 });
 
 router.get("/news-article/:id", async (req, res) => {

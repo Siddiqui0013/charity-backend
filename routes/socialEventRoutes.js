@@ -1,8 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const SocialEvent = require("../models/SocialEvent");
+const verifyAdmin = require("../middleWare/verifyAdmin");
+const { upload } = require("../middleWare/multer.middleware");
+const { uploadOnCloudinary, deleteFromCloudinary } = require("../utils/cloudinary");
 
-router.post("/social-events", async (req, res) => {
+router.post("/social-events", verifyAdmin, async (req, res) => {
   try {
     const { title, date, author } = req.body;
 
@@ -13,8 +16,12 @@ router.post("/social-events", async (req, res) => {
       });
     }
 
-    const socialEvent = new SocialEvent({ title, date, author });
-    await socialEvent.save();
+    const newEvent = new SocialEvent({ title, date, author });
+    if (req.file) {
+      const result = await uploadOnCloudinary(req.file.path);
+      newBook.picture = result.url;
+  }
+    const socialEvent = await newEvent.save();
 
     res.status(201).json({
       success: true,
@@ -31,15 +38,29 @@ router.post("/social-events", async (req, res) => {
 });
 
 router.get("/social-events", async (req, res) => {
-  try {
-    const socialEvents = await SocialEvent.find();
-    res.status(200).json({
-      success: true,
-      message: "Social events fetched successfully",
-      totalEvents: socialEvents.length,
-      socialEvents,
-    });
-  } catch (err) {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const per_page = parseInt(req.query.per_page) || 9;
+
+        const skip = (page - 1) * per_page;
+
+        const socialEvents = await SocialEvent.countDocuments();
+
+        const event = await SocialEvent.find()
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(per_page);
+
+        res.status(200).json({
+            success: true,
+            message: "Social events fetched successfully.",
+            current_page: page,
+            per_page: per_page,
+            total: socialEvents,
+            total_pages: Math.ceil(socialEvents / per_page),
+            data: event,
+        });
+    } catch (err) {
     res.status(500).json({
       success: false,
       message: "Failed to fetch social events",
@@ -48,7 +69,7 @@ router.get("/social-events", async (req, res) => {
   }
 });
 
-router.get("/social-events/:id", async (req, res) => {
+router.get("/social-event/:id", async (req, res) => {
   try {
     const socialEvent = await SocialEvent.findById(req.params.id);
 
@@ -73,40 +94,61 @@ router.get("/social-events/:id", async (req, res) => {
   }
 });
 
-router.put("/social-events/:id", async (req, res) => {
+router.put("/social-event/:id", verifyAdmin, upload.single("picture"), async (req, res) => {
   try {
-    const { title, date, author } = req.body;
+      const { title, date, author } = req.body;
+      const event = await SocialEvent.findById(req.params.id);
 
-    const updatedEvent = await SocialEvent.findByIdAndUpdate(
-      req.params.id,
-      { title, date, author },
-      { new: true, runValidators: true }
-    );
+      if (!event) {
+          return res.status(404).json({
+              success: false,
+              message: `No event found with ID: ${req.params.id}`,
+          });
+      }
 
-    if (!updatedEvent) {
-      return res.status(404).json({
-        success: false,
-        message: "Social event not found",
+      const updateData = {
+          ...(title && { title }),
+          ...(description && { description }),
+      };
+
+      if (req.file) {
+          if (book.picture) {
+              const publicId = donation.picture.split("/").pop().split(".")[0];
+              await deleteFromCloudinary(publicId);
+          }
+          const result = await uploadOnCloudinary(req.file.path);
+          updateData.picture = result.url;
+      }
+
+      const updatedEvent = await SocialEvent.findByIdAndUpdate(
+          req.params.id,
+          updateData,
+          { new: true, runValidators: true }
+      );
+
+      res.status(200).json({
+          success: true,
+          message: "Book updated successfully.",
+          data: updatedBook,
       });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Social event updated successfully",
-      updatedEvent,
-    });
   } catch (err) {
-    res.status(400).json({
-      success: false,
-      message: "Failed to update social event",
-      error: err.message,
-    });
+      res.status(500).json({
+          success: false,
+          message: "Failed to update book.",
+          error: err.message,
+      });
   }
 });
 
 router.delete("/social-events/:id", async (req, res) => {
   try {
-    const deletedEvent = await SocialEvent.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+    const news = await SocialEvent.findById(id);
+    if (news.picture) {
+      const publicId = news.picture.split("/").pop().split(".")[0];
+      await deleteFromCloudinary(publicId);
+    }
+    const deletedEvent = await SocialEvent.findByIdAndDelete(id);
 
     if (!deletedEvent) {
       return res.status(404).json({

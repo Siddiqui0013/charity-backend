@@ -1,8 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const TeamMember = require("../models/TeamMember");
+const verifyAdmin = require("../middleWare/verifyAdmin");
+const { upload } = require("../middleWare/multer.middleware");
+const { uploadOnCloudinary, deleteFromCloudinary } = require("../utils/cloudinary");
 
-router.post("/team-member", async (req, res) => {
+router.post("/team-member", verifyAdmin, async (req, res) => {
     try {
         const { name, role, image } = req.body;
 
@@ -14,6 +17,10 @@ router.post("/team-member", async (req, res) => {
         }
 
         const newTeamMember = new TeamMember({ name, role, image  });
+        if (req.file) {
+            const result = await uploadOnCloudinary(req.file.path);
+            newTeamMember.image = result.url;
+        }
         const savedTeamMember = await newTeamMember.save();
 
         res.status(201).json({
