@@ -7,7 +7,7 @@ router.post("/login", async (req, res) => {
   try {
     const { name, password } = req.body;
 
-    if (name !== process.env.ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+    if (name !== process.env.ADMIN_USERNAME || password !== process.env.ADMIN_PASSWORD) {
       return res.status(401).json({
         success: false,
         message: "Invalid credentials",

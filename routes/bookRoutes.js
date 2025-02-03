@@ -1,8 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const Books = require("../models/Book");
+const verifyAdmin = require("../middleWare/verifyAdmin");
+const { upload } = require("../middleWare/multer.middleware");
+const { uploadOnCloudinary, deleteFromCloudinary } = require("../utils/cloudinary");
 
-router.post("/book", async (req, res) => {
+router.post("/book", verifyAdmin, upload.single("picture"), async (req, res) => {
     try {
         const { title, description } = req.body;
 
@@ -14,6 +17,12 @@ router.post("/book", async (req, res) => {
         }
 
         const newBook = new Books({ title, description });
+
+        if (req.file) {
+            const result = await uploadOnCloudinary(req.file.path);
+            newBook.picture = result.url;
+        }
+
         const savedBook = await newBook.save();
 
         res.status(201).json({
@@ -32,24 +41,31 @@ router.post("/book", async (req, res) => {
 
 router.get("/books", async (req, res) => {
     try {
-        const books = await Books.find();
-        if (books.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "No books found.",
-            });
-        }
+        const page = parseInt(req.query.page) || 1;
+        const per_page = parseInt(req.query.per_page) || 10;
+
+        const skip = (page - 1) * per_page;
+
+        const totalBooks = await Books.countDocuments();
+
+        const books = await Books.find()
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(per_page);
 
         res.status(200).json({
             success: true,
             message: "Books fetched successfully.",
-            total: books.length,
+            current_page: page,
+            per_page: per_page,
+            total: totalBooks,
+            total_pages: Math.ceil(totalDonations / per_page),
             data: books,
         });
     } catch (err) {
         res.status(500).json({
             success: false,
-            message: "An error occurred while fetching books.",
+            message: "Failed to fetch Books.",
             error: err.message,
         });
     }
@@ -81,7 +97,7 @@ router.get("/book/:id", async (req, res) => {
     }
 });
 
-router.put("/book/:id", async (req, res) => {
+router.put("/book/:id", verifyAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { title, description } = req.body;
@@ -120,9 +136,15 @@ router.put("/book/:id", async (req, res) => {
     }
 });
 
-router.delete("/book/:id", async (req, res) => {
+router.delete("/book/:id", verifyAdmin, async (req, res) => {
     try {
         const { id } = req.params;
+
+        const book = await Books.findById(id);
+        if (book.picture) {
+            const publicId = book.picture.split("/").pop().split(".")[0];
+            await deleteFromCloudinary(publicId, book.picture);
+        }
 
         const deletedBook = await Books.findByIdAndDelete(id);
         if (!deletedBook) {

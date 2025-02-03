@@ -1,8 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const NewsArticle = require("../models/NewsArticles");
+const verifyAdmin = require("../middleWare/verifyAdmin");
 
-router.post("/news-article", async (req, res) => {
+router.post("/news-article", verifyAdmin, async (req, res) => {
   try {
     const { title, description } = req.body;
 

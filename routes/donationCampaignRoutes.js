@@ -16,12 +16,23 @@ router.post("/donation", verifyAdmin, upload.single("picture"), async (req, res)
             });
         }
 
-        const donation = new Donations({ title, description, goal });
-
+        let pictureUrl;
         if (req.file) {
-            const result = await uploadOnCloudinary(req.file.path);
-            donation.picture = result.url;
+            console.log(req.file);
+            
+            const cloudinaryResponse = await uploadOnCloudinary(req.file.path);
+            if (!cloudinaryResponse) {
+                throw new Error("Failed to upload image");
+            }
+            pictureUrl = cloudinaryResponse.url;
         }
+
+        const donation = new Donations({ 
+            title, 
+            description, 
+            goal: Number(goal),
+            picture: pictureUrl
+        });
 
         const savedDonation = await donation.save();
 
@@ -31,6 +42,7 @@ router.post("/donation", verifyAdmin, upload.single("picture"), async (req, res)
             data: savedDonation,
         });
     } catch (err) {
+        console.error("Upload error:", err); // Add this for debugging
         res.status(500).json({
             success: false,
             message: "Failed to create donation campaign.",
@@ -41,11 +53,24 @@ router.post("/donation", verifyAdmin, upload.single("picture"), async (req, res)
 
 router.get("/donations", async (req, res) => {
     try {
-        const donations = await Donations.find();
+        const page = parseInt(req.query.page) || 1;
+        const per_page = parseInt(req.query.per_page) || 10;
+
+        const skip = (page - 1) * per_page;
+
+        const totalDonations = await Donations.countDocuments();
+
+        const donations = await Donations.find()
+            .skip(skip)
+            .limit(per_page);
+
         res.status(200).json({
             success: true,
             message: "Donation campaigns fetched successfully.",
-            total: donations.length,
+            current_page: page,
+            per_page: per_page,
+            total: totalDonations,
+            total_pages: Math.ceil(totalDonations / per_page),
             data: donations,
         });
     } catch (err) {
@@ -82,29 +107,38 @@ router.get("/donation/:id", async (req, res) => {
     }
 });
 
-router.put("/donation/:id", async (req, res) => {
+router.put("/donation/:id", verifyAdmin, upload.single("picture"), async (req, res) => {
     try {
         const { title, description, goal } = req.body;
+        const donation = await Donations.findById(req.params.id);
 
-        if (!title && !description && !goal) {
-            return res.status(400).json({
-                success: false,
-                message: "At least one field (title, description, or goal) is required to update.",
-            });
-        }
-
-        const updatedDonation = await Donations.findByIdAndUpdate(
-            req.params.id,
-            { title, description, goal },
-            { new: true, runValidators: true }
-        );
-
-        if (!updatedDonation) {
+        if (!donation) {
             return res.status(404).json({
                 success: false,
                 message: `No donation campaign found with ID: ${req.params.id}`,
             });
         }
+
+        const updateData = {
+            ...(title && { title }),
+            ...(description && { description }),
+            ...(goal && { goal: Number(goal) })
+        };
+
+        if (req.file) {
+            if (donation.picture) {
+                const publicId = donation.picture.split("/").pop().split(".")[0];
+                await deleteFromCloudinary(publicId);
+            }
+            const result = await uploadOnCloudinary(req.file.path);
+            updateData.picture = result.url;
+        }
+
+        const updatedDonation = await Donations.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true, runValidators: true }
+        );
 
         res.status(200).json({
             success: true,
@@ -120,7 +154,7 @@ router.put("/donation/:id", async (req, res) => {
     }
 });
 
-router.delete("/donation/:id", async (req, res) => {
+router.delete("/donation/:id", verifyAdmin, async (req, res) => {
     try {
 
         const donation = await Donations.findById(req.params.id);
