@@ -42,7 +42,7 @@ router.post("/donation", verifyAdmin, upload.single("picture"), async (req, res)
             data: savedDonation,
         });
     } catch (err) {
-        console.error("Upload error:", err); // Add this for debugging
+        console.error("Upload error:", err);
         res.status(500).json({
             success: false,
             message: "Failed to create donation campaign.",
@@ -57,9 +57,7 @@ router.get("/donations", async (req, res) => {
         const per_page = parseInt(req.query.per_page) || 10;
 
         const skip = (page - 1) * per_page;
-
         const totalDonations = await Donations.countDocuments();
-
         const donations = await Donations.find()
             .skip(skip)
             .limit(per_page);

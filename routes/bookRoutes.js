@@ -59,7 +59,7 @@ router.get("/books", async (req, res) => {
             current_page: page,
             per_page: per_page,
             total: totalBooks,
-            total_pages: Math.ceil(totalDonations / per_page),
+            total_pages: Math.ceil(totalBooks / per_page),
             data: books,
         });
     } catch (err) {
@@ -97,30 +97,37 @@ router.get("/book/:id", async (req, res) => {
     }
 });
 
-router.put("/book/:id", verifyAdmin, async (req, res) => {
+router.put("/donation/:id", verifyAdmin, upload.single("picture"), async (req, res) => {
     try {
-        const { id } = req.params;
         const { title, description } = req.body;
+        const book = await Books.findById(req.params.id);
 
-        if (!title && !description) {
-            return res.status(400).json({
+        if (!book) {
+            return res.status(404).json({
                 success: false,
-                message: "At least one field (title or description) must be provided to update.",
+                message: `No book found with ID: ${req.params.id}`,
             });
+        }
+
+        const updateData = {
+            ...(title && { title }),
+            ...(description && { description }),
+        };
+
+        if (req.file) {
+            if (book.picture) {
+                const publicId = donation.picture.split("/").pop().split(".")[0];
+                await deleteFromCloudinary(publicId);
+            }
+            const result = await uploadOnCloudinary(req.file.path);
+            updateData.picture = result.url;
         }
 
         const updatedBook = await Books.findByIdAndUpdate(
-            id,
-            { title, description },
+            req.params.id,
+            updateData,
             { new: true, runValidators: true }
         );
-
-        if (!updatedBook) {
-            return res.status(404).json({
-                success: false,
-                message: `No book found with ID: ${id}`,
-            });
-        }
 
         res.status(200).json({
             success: true,
@@ -130,7 +137,7 @@ router.put("/book/:id", verifyAdmin, async (req, res) => {
     } catch (err) {
         res.status(500).json({
             success: false,
-            message: "An error occurred while updating the book.",
+            message: "Failed to update book.",
             error: err.message,
         });
     }

@@ -2,32 +2,50 @@ const express = require("express");
 const router = express.Router();
 const NewsArticle = require("../models/NewsArticles");
 const verifyAdmin = require("../middleWare/verifyAdmin");
+const { upload } = require("../middleWare/multer.middleware");
+const { uploadOnCloudinary, deleteFromCloudinary } = require("../utils/cloudinary");
 
-router.post("/news-article", verifyAdmin, async (req, res) => {
+router.post("/news-article", verifyAdmin, upload.single("picture"), async (req, res) => {
   try {
-    const { title, description } = req.body;
+      const { title, description } = req.body;
 
-    if (!title || !description ) {
-      return res.status(400).json({
-        success: false,
-        message: "Title, description are required.",
+      if (!title || !description) {
+          return res.status(400).json({
+              success: false,
+              message: "Title and description required.",
+          });
+      }
+
+      let pictureUrl;
+      if (req.file) {
+          console.log(req.file);
+          const cloudinaryResponse = await uploadOnCloudinary(req.file.path);
+          if (!cloudinaryResponse) {
+              throw new Error("Failed to upload image");
+          }
+          pictureUrl = cloudinaryResponse.url;
+      }
+
+      const newsArticle  = new NewsArticle ({ 
+          title, 
+          description, 
+          picture: pictureUrl
       });
-    }
 
-    const newsArticle = new NewsArticle({ title, description });
-    await newsArticle.save();
+      const savedNewsArticle  = await newsArticle .save();
 
-    res.status(201).json({
-      success: true,
-      message: "News article created successfully",
-      newsArticle,
-    });
+      res.status(201).json({
+          success: true,
+          message: "News created successfully.",
+          data: savedNewsArticle,
+      });
   } catch (err) {
-    res.status(400).json({
-      success: false,
-      message: "Failed to create news article",
-      error: err.message,
-    });
+      console.error("Upload error:", err);
+      res.status(500).json({
+          success: false,
+          message: "Failed to create news.",
+          error: err.message,
+      });
   }
 });
 
@@ -74,40 +92,62 @@ router.get("/news-article/:id", async (req, res) => {
   }
 });
 
-router.put("/news-article/:id", async (req, res) => {
+router.put("/news-article/:id", verifyAdmin, upload.single("picture"), async (req, res) => {
   try {
-    const { title, description, link } = req.body;
+      const { title, description } = req.body;
+      const newsArticle = await NewsArticle.findById(req.params.id);
 
-    const updatedArticle = await NewsArticle.findByIdAndUpdate(
-      req.params.id,
-      { title, description, link },
-      { new: true, runValidators: true }
-    );
+      if (!newsArticle) {
+          return res.status(404).json({
+              success: false,
+              message: `No news found with ID: ${req.params.id}`,
+          });
+      }
 
-    if (!updatedArticle) {
-      return res.status(404).json({
-        success: false,
-        message: "News article not found",
+      const updateData = {
+          ...(title && { title }),
+          ...(description && { description }),
+      };
+
+      if (req.file) {
+          if (newsArticle.picture) {
+              const publicId = donation.picture.split("/").pop().split(".")[0];
+              await deleteFromCloudinary(publicId);
+          }
+          const result = await uploadOnCloudinary(req.file.path);
+          updateData.picture = result.url;
+      }
+
+      const updatedNews = await NewsArticle.findByIdAndUpdate(
+          req.params.id,
+          updateData,
+          { new: true, runValidators: true }
+      );
+
+      res.status(200).json({
+          success: true,
+          message: "News updated successfully.",
+          data: updatedNews,
       });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "News article updated successfully",
-      updatedArticle,
-    });
   } catch (err) {
-    res.status(400).json({
-      success: false,
-      message: "Failed to update news article",
-      error: err.message,
-    });
+      res.status(500).json({
+          success: false,
+          message: "Failed to update news.",
+          error: err.message,
+      });
   }
 });
 
-router.delete("/news-article/:id", async (req, res) => {
+router.delete("/news-article/:id", verifyAdmin, async (req, res) => {
   try {
-    const deletedArticle = await NewsArticle.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+    const article = await NewsArticle.findById(id);
+    if (article.picture) {
+      const publicId = article.picture.split("/").pop().split(".")[0];
+      await deleteFromCloudinary(publicId);
+    }
+
+    const deletedArticle = await NewsArticle.findByIdAndDelete(id);
 
     if (!deletedArticle) {
       return res.status(404).json({

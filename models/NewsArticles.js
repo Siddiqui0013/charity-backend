@@ -1,17 +1,5 @@
 const mongoose = require("mongoose");
 
-const cats = [
-  "millie_neo",
-  "neo_banana",
-  "millie",
-  "neo",
-  "neo_2",
-  "bella",
-  "poppy",
-  "louie",
-  "g",
-];
-
 const newsArticleSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -23,9 +11,6 @@ const newsArticleSchema = new mongoose.Schema({
   },
   image: {
     type: String,
-    default: function () {
-      return `https://placecats.com/${cats[Math.floor(Math.random() * cats.length)]}/300/200`;
-    }
   },
 
 });
