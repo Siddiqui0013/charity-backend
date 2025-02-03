@@ -1,8 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const Donations = require("../models/DonationCampaign");
+const verifyAdmin = require("../middleWare/verifyAdmin");
+const { upload } = require("../middleWare/multer.middleware");
+const { uploadOnCloudinary, deleteFromCloudinary } = require("../utils/cloudinary");
 
-router.post("/donation", async (req, res) => {
+router.post("/donation", verifyAdmin, upload.single("picture"), async (req, res) => {
     try {
         const { title, description, goal } = req.body;
 
@@ -14,6 +17,12 @@ router.post("/donation", async (req, res) => {
         }
 
         const donation = new Donations({ title, description, goal });
+
+        if (req.file) {
+            const result = await uploadOnCloudinary(req.file.path);
+            donation.picture = result.url;
+        }
+
         const savedDonation = await donation.save();
 
         res.status(201).json({
@@ -113,6 +122,13 @@ router.put("/donation/:id", async (req, res) => {
 
 router.delete("/donation/:id", async (req, res) => {
     try {
+
+        const donation = await Donations.findById(req.params.id);
+        if (donation.picture) {
+            const publicId = donation.picture.split("/").pop().split(".")[0];
+            await deleteFromCloudinary(publicId, donation.picture);
+        }
+
         const deletedDonation = await Donations.findByIdAndDelete(req.params.id);
 
         if (!deletedDonation) {
