@@ -12,25 +12,52 @@ cloudinary.config({
 
 });
 
-const uploadOnCloudinary = async (localFilePath) => {
+const deleteFromCloudinary = async (publicId, url) => {
     try {
-        const response = await cloudinary.uploader.upload(localFilePath, {
-            resource_type: "auto"
+        // First try as raw file
+        try {
+            const rawResponse = await cloudinary.uploader.destroy(publicId, {
+                resource_type: 'raw'
+            });
+            if (rawResponse.result === 'ok') {
+                return rawResponse;
+            }
+        } catch (rawError) {
+            // If raw deletion fails, try as image
+            console.log("Raw deletion failed, trying as image");
+        }
+
+        // Try as image if raw failed
+        const imageResponse = await cloudinary.uploader.destroy(publicId, {
+            resource_type: 'image'
         });
-        return response;
+        return imageResponse;
+
     } catch (error) {
-        console.error("Cloudinary upload failed:", error);
-        throw error;
+        console.error("Error deleting file from Cloudinary:", error.message);
+        console.error("Public ID:", publicId);
+        console.error("URL:", url);
+        return null;
     }
 };
 
-const deleteFromCloudinary = async (publicId) => {
+const uploadOnCloudinary = async (localFilePath) => {
     try {
-        await cloudinary.uploader.destroy(publicId);
+        if (!localFilePath) return null
+        //upload the file on cloudinary
+        const response = await cloudinary.uploader.upload(localFilePath, {
+            resource_type: "auto"
+        })
+        // file has been uploaded successfull
+        //console.log("file is uploaded on cloudinary ", response.url);
+        fs.unlinkSync(localFilePath)
+        return response;
+
     } catch (error) {
-        console.error("Cloudinary delete failed:", error);
-        throw error;
+        fs.unlinkSync(localFilePath) // remove the locally saved temporary file as the upload operation got failed
+        console.error("Error uploading file to Cloudinary:", error.message);
+        return null;
     }
-};
+}
 
 module.exports = { uploadOnCloudinary, deleteFromCloudinary };
