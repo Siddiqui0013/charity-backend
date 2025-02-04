@@ -29,7 +29,7 @@ router.post("/news-article", verifyAdmin, upload.single("picture"), async (req, 
       const newsArticle  = new NewsArticle ({ 
           title, 
           description, 
-          picture: pictureUrl
+          image: pictureUrl
       });
 
       const savedNewsArticle  = await newsArticle .save();

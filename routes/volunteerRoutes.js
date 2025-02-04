@@ -105,17 +105,21 @@ router.put("/volunteer/:id", verifyAdmin, async (req, res) => {
     }
 
     const updatedData = {
-      ...title
+      ...{ title },
     }
 
     if (req.file) {
+      if (volunteer.picture) {
+        const publicId = volunteer.picture.split("/").pop().split(".")[0];
+        await deleteFromCloudinary(publicId);
+      }
       const result = await uploadOnCloudinary(req.file.path);
-      volunteer.image = result.url;
+      updatedData.image = result.url;
     }
 
     const updatedVolunteer = await Volunteer.findByIdAndUpdate(
       req.params.id,
-      { title },
+      updatedData, 
       { new: true, runValidators: true }
     );
     res.status(200).json({
@@ -132,7 +136,7 @@ router.put("/volunteer/:id", verifyAdmin, async (req, res) => {
   }
 });
 
-router.delete("/volunteer/:id", async (req, res) => {
+router.delete("/volunteer/:id", verifyAdmin, async (req, res) => {
   try {
     const deletedVolunteer = await Volunteer.findByIdAndDelete(req.params.id);
 
