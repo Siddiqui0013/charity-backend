@@ -47,13 +47,12 @@ router.get("/team-members", async (req, res) => {
         const totalMembers = await TeamMember.countDocuments();
 
         const memebers = await TeamMember.find()
-            .sort({ createdAt: -1 })
             .skip(skip)
             .limit(per_page);
 
         res.status(200).json({
             success: true,
-            message: "Books fetched successfully.",
+            message: "Team Members fetched successfully.",
             current_page: page,
             per_page: per_page,
             total: totalMembers,
@@ -97,13 +96,13 @@ router.get("/team-member/:id", async (req, res) => {
 
 router.put("/team-member/:id", verifyAdmin, upload.single("picture"), async (req, res) => {
     try {
-        const { title, description, picture } = req.body;
-        const book = await Books.findById(req.params.id);
+        const { title, description } = req.body;
+        const teamMember = await TeamMember.findById(req.params.id);
 
-        if (!book) {
+        if (!teamMember) {
             return res.status(404).json({
                 success: false,
-                message: `No book found with ID: ${req.params.id}`,
+                message: `No team member found with ID: ${req.params.id}`,
             });
         }
 
@@ -113,15 +112,15 @@ router.put("/team-member/:id", verifyAdmin, upload.single("picture"), async (req
         };
 
         if (req.file) {
-            if (book.picture) {
+            if (teamMember.picture) {
                 const publicId = donation.picture.split("/").pop().split(".")[0];
                 await deleteFromCloudinary(publicId);
             }
             const result = await uploadOnCloudinary(req.file.path);
-            updateData.picture = result.url;
+            updateData.image = result.url;
         }
 
-        const updatedBook = await Books.findByIdAndUpdate(
+        const updatedMember = await TeamMember.findByIdAndUpdate(
             req.params.id,
             updateData,
             { new: true, runValidators: true }
@@ -129,22 +128,28 @@ router.put("/team-member/:id", verifyAdmin, upload.single("picture"), async (req
 
         res.status(200).json({
             success: true,
-            message: "Book updated successfully.",
-            data: updatedBook,
+            message: "Team member updated successfully.",
+            data: updatedMember,
         });
     } catch (err) {
         res.status(500).json({
             success: false,
-            message: "Failed to update book.",
+            message: "Failed to update member.",
             error: err.message,
         });
     }
 });
 
 
-router.delete("/team-member/:id", async (req, res) => {
+router.delete("/team-member/:id", verifyAdmin, async (req, res) => {
     try {
         const { id } = req.params;
+
+        const teamMember = await TeamMember.findById(id);
+        if (teamMember.picture) {
+            const publicId = teamMember.picture.split("/").pop().split(".")[0];
+            await deleteFromCloudinary(publicId);
+        }
 
         const deletedTeamMember = await TeamMember.findByIdAndDelete(id);
         if (!deletedTeamMember) {

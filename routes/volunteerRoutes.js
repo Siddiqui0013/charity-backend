@@ -2,44 +2,61 @@ const express = require("express");
 const router = express.Router();
 const Volunteer = require("../models/Volunteer");
 const verifyAdmin = require("../middleWare/verifyAdmin");
+const { upload } = require("../middleWare/multer.middleware");
+const { uploadOnCloudinary, deleteFromCloudinary } = require("../utils/cloudinary");
 
-router.post("/volunteer", async (req, res) => {
+router.post("/volunteer", verifyAdmin, upload.single("picture"), async (req, res) => {
   try {
-    const { title } = req.body;
+      const { title } = req.body;
 
-    if (!title) {
-      return res.status(400).json({
-        success: false,
-        message: "Title is required.",
+      if (!title) {
+          return res.status(400).json({
+              success: false,
+              message: "Title is required.",
+          });
+      }
+
+      const newVolunteer = new Volunteer({ title });
+
+      if (req.file) {
+          const result = await uploadOnCloudinary(req.file.path);
+          newVolunteer.image = result.url;
+      }
+
+      const savedVolunteer = await newVolunteer.save();
+
+      res.status(201).json({
+          success: true,
+          message: "Volunteer created successfully.",
+          data: savedVolunteer,
       });
-    }
-
-    const volunteer = new Volunteer({ title });
-    await volunteer.save();
-
-    res.status(201).json({
-      success: true,
-      message: "Volunteer created successfully",
-      volunteer,
-    });
   } catch (err) {
-    res.status(400).json({
-      success: false,
-      message: "Failed to create volunteer",
-      error: err.message,
-    });
+      res.status(500).json({
+          success: false,
+          message: "An error occurred while creating the volunteer.",
+          error: err.message,
+      });
   }
 });
 
 router.get("/volunteers", async (req, res) => {
   try {
-    const volunteers = await Volunteer.find();
+    const page = parseInt(req.query.page) || 1;
+    const per_page = parseInt(req.query.per_page) || 10;
+    const skip = (page - 1) * per_page;
+
+    const totalVolunters = await Volunteer.countDocuments(); 
+    const volunteers = await Volunteer.find().skip(skip).limit(per_page);
     res.status(200).json({
       success: true,
-      message: "Volunteers fetched successfully",
-      totalVolunteers: volunteers.length,
-      volunteers,
-    });
+      message: "Volunteers fetched successfully.",
+      current_page: page,
+      per_page: per_page,
+      total: totalVolunters,
+      total_pages: Math.ceil(totalVolunters / per_page),
+      data: volunteers,
+    })
+
   } catch (err) {
     res.status(500).json({
       success: false,
@@ -74,23 +91,33 @@ router.get("/volunteer/:id", async (req, res) => {
   }
 });
 
-router.put("/volunteer/:id", async (req, res) => {
+router.put("/volunteer/:id", verifyAdmin, async (req, res) => {
   try {
     const { title } = req.body;
 
-    const updatedVolunteer = await Volunteer.findByIdAndUpdate(
-      req.params.id,
-      { title },
-      { new: true, runValidators: true }
-    );
+    const volunteer = await Volunteer.findById(req.params.id)
 
-    if (!updatedVolunteer) {
+    if (!volunteer) {
       return res.status(404).json({
         success: false,
         message: "Volunteer not found",
       });
     }
 
+    const updatedData = {
+      ...title
+    }
+
+    if (req.file) {
+      const result = await uploadOnCloudinary(req.file.path);
+      volunteer.image = result.url;
+    }
+
+    const updatedVolunteer = await Volunteer.findByIdAndUpdate(
+      req.params.id,
+      { title },
+      { new: true, runValidators: true }
+    );
     res.status(200).json({
       success: true,
       message: "Volunteer updated successfully",
