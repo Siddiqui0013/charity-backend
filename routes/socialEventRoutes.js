@@ -129,7 +129,7 @@ router.put("/social-event/:id", verifyAdmin, upload.single("picture"), async (re
       res.status(200).json({
           success: true,
           message: "Book updated successfully.",
-          data: updatedBook,
+          data: updatedEvent,
       });
   } catch (err) {
       res.status(500).json({
