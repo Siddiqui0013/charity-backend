@@ -15,7 +15,6 @@ cloudinary.config({
 
 const deleteFromCloudinary = async (publicId, url) => {
     try {
-        // First try as raw file
         try {
             const rawResponse = await cloudinary.uploader.destroy(publicId, {
                 resource_type: 'raw'
@@ -24,11 +23,8 @@ const deleteFromCloudinary = async (publicId, url) => {
                 return rawResponse;
             }
         } catch (rawError) {
-            // If raw deletion fails, try as image
             console.log("Raw deletion failed, trying as image");
         }
-
-        // Try as image if raw failed
         const imageResponse = await cloudinary.uploader.destroy(publicId, {
             resource_type: 'image'
         });
@@ -45,17 +41,14 @@ const deleteFromCloudinary = async (publicId, url) => {
 const uploadOnCloudinary = async (localFilePath) => {
     try {
         if (!localFilePath) return null
-        //upload the file on cloudinary
         const response = await cloudinary.uploader.upload(localFilePath, {
             resource_type: "auto"
         })
-        // file has been uploaded successfull
-        //console.log("file is uploaded on cloudinary ", response.url);
         fs.unlinkSync(localFilePath)
         return response;
 
     } catch (error) {
-        fs.unlinkSync(localFilePath) // remove the locally saved temporary file as the upload operation got failed
+        fs.unlinkSync(localFilePath)
         console.error("Error uploading file to Cloudinary:", error.message);
         return null;
     }
