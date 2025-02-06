@@ -18,7 +18,7 @@ router.post("/donation", verifyAdmin, upload.single("picture"), async (req, res)
 
         let pictureUrl;
         if (req.file) {
-            console.log(req.file);
+            console.log("req.file", req.file);
             
             const cloudinaryResponse = await uploadOnCloudinary(req.file.path);
             if (!cloudinaryResponse) {
