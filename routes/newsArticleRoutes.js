@@ -124,12 +124,12 @@ router.put("/news-article/:id", verifyAdmin, upload.single("picture"), async (re
       };
 
       if (req.file) {
-          if (newsArticle.picture) {
-              const publicId = donation.picture.split("/").pop().split(".")[0];
+          if (newsArticle.image) {
+              const publicId = newsArticle.image.split("/").pop().split(".")[0];
               await deleteFromCloudinary(publicId);
           }
           const result = await uploadOnCloudinary(req.file.path);
-          updateData.picture = result.url;
+          updateData.image = result.url;
       }
 
       const updatedNews = await NewsArticle.findByIdAndUpdate(
@@ -156,8 +156,8 @@ router.delete("/news-article/:id", verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const article = await NewsArticle.findById(id);
-    if (article.picture) {
-      const publicId = article.picture.split("/").pop().split(".")[0];
+    if (article.image) {
+      const publicId = article.image.split("/").pop().split(".")[0];
       await deleteFromCloudinary(publicId);
     }
 

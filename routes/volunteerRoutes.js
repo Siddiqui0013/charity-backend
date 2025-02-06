@@ -19,11 +19,13 @@ router.post("/volunteer", verifyAdmin, upload.single("picture"), async (req, res
       const newVolunteer = new Volunteer({ title });
 
       if (req.file) {
+          console.log("req.file", req.file);
           const result = await uploadOnCloudinary(req.file.path);
           newVolunteer.image = result.url;
       }
 
       const savedVolunteer = await newVolunteer.save();
+      console.log("savedVolunteer", savedVolunteer);
 
       res.status(201).json({
           success: true,
@@ -91,9 +93,10 @@ router.get("/volunteer/:id", async (req, res) => {
   }
 });
 
-router.put("/volunteer/:id", verifyAdmin, async (req, res) => {
+router.put("/volunteer/:id", verifyAdmin, upload.single("picture"), async (req, res) => {
   try {
     const { title } = req.body;
+    console.log("title", title);
 
     const volunteer = await Volunteer.findById(req.params.id)
 
@@ -109,12 +112,17 @@ router.put("/volunteer/:id", verifyAdmin, async (req, res) => {
     }
 
     if (req.file) {
-      if (volunteer.picture) {
-        const publicId = volunteer.picture.split("/").pop().split(".")[0];
+      console.log("req.file for update", req.file);
+      if (volunteer.image) {
+        console.log("volunteer.image for update", volunteer.image);
+        const publicId = volunteer.image.split("/").pop().split(".")[0];
         await deleteFromCloudinary(publicId);
       }
       const result = await uploadOnCloudinary(req.file.path);
       updatedData.image = result.url;
+    }
+    else{
+      console.log("Not updating image");
     }
 
     const updatedVolunteer = await Volunteer.findByIdAndUpdate(
@@ -122,17 +130,19 @@ router.put("/volunteer/:id", verifyAdmin, async (req, res) => {
       updatedData, 
       { new: true, runValidators: true }
     );
+    console.log("updatedVolunteer", updatedVolunteer);
     res.status(200).json({
       success: true,
       message: "Volunteer updated successfully",
-      updatedVolunteer,
+      data : updatedVolunteer,
     });
   } catch (err) {
     res.status(400).json({
       success: false,
       message: "Failed to update volunteer",
       error: err.message,
-    });
+    })
+    console.log(err);
   }
 });
 
@@ -161,6 +171,7 @@ router.delete("/volunteer/:id", verifyAdmin, async (req, res) => {
   }
 });
 
+// Delete all entries
 router.delete("/deleteVolunteers", async (req, res) => {
   try {
     const result = await Volunteer.deleteMany({});

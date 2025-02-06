@@ -10,8 +10,7 @@ const teamMemberSchema = new mongoose.Schema({
         required: true,
     },
     image: {
-        type: String,
-        default: "https://i.pravatar.cc/300"
+        type: String
     },
     });
 

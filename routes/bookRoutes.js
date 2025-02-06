@@ -7,7 +7,11 @@ const { uploadOnCloudinary, deleteFromCloudinary } = require("../utils/cloudinar
 
 router.post("/book", verifyAdmin, upload.single("picture"), async (req, res) => {
     try {
+        console.log(req.formData);
         const { title, description } = req.body;
+        console.log("req.file", req.file);
+        console.log("title", title);
+        
 
         if (!title || !description) {
             return res.status(400).json({
@@ -20,7 +24,7 @@ router.post("/book", verifyAdmin, upload.single("picture"), async (req, res) => 
 
         if (req.file) {
             const result = await uploadOnCloudinary(req.file.path);
-            newBook.picture = result.url;
+            newBook.image = result.url;
         }
 
         const savedBook = await newBook.save();
@@ -99,6 +103,8 @@ router.get("/book/:id", async (req, res) => {
 
 router.put("/book/:id", verifyAdmin, upload.single("picture"), async (req, res) => {
     try {
+        console.log(req.formData);
+        
         const { title, description } = req.body;
         const book = await Books.findById(req.params.id);
 
@@ -115,12 +121,12 @@ router.put("/book/:id", verifyAdmin, upload.single("picture"), async (req, res) 
         };
 
         if (req.file) {
-            if (book.picture) {
-                const publicId = donation.picture.split("/").pop().split(".")[0];
+            if (book.image) {
+                const publicId = book.image.split("/").pop().split(".")[0];
                 await deleteFromCloudinary(publicId);
             }
             const result = await uploadOnCloudinary(req.file.path);
-            updateData.picture = result.url;
+            updateData.image = result.url;
         }
 
         const updatedBook = await Books.findByIdAndUpdate(
@@ -128,6 +134,8 @@ router.put("/book/:id", verifyAdmin, upload.single("picture"), async (req, res) 
             updateData,
             { new: true, runValidators: true }
         );
+        console.log("updatedBook", updatedBook);
+        
 
         res.status(200).json({
             success: true,

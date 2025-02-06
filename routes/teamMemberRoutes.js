@@ -5,7 +5,7 @@ const verifyAdmin = require("../middleWare/verifyAdmin");
 const { upload } = require("../middleWare/multer.middleware");
 const { uploadOnCloudinary, deleteFromCloudinary } = require("../utils/cloudinary");
 
-router.post("/team-member", verifyAdmin, async (req, res) => {
+router.post("/team-member", verifyAdmin, upload.single("picture"), async (req, res) => {
     try {
         const { name, role, image } = req.body;
 
@@ -112,8 +112,8 @@ router.put("/team-member/:id", verifyAdmin, upload.single("picture"), async (req
         };
 
         if (req.file) {
-            if (teamMember.picture) {
-                const publicId = donation.picture.split("/").pop().split(".")[0];
+            if (teamMember.image) {
+                const publicId = teamMember.image.split("/").pop().split(".")[0];
                 await deleteFromCloudinary(publicId);
             }
             const result = await uploadOnCloudinary(req.file.path);
@@ -146,8 +146,8 @@ router.delete("/team-member/:id", verifyAdmin, async (req, res) => {
         const { id } = req.params;
 
         const teamMember = await TeamMember.findById(id);
-        if (teamMember.picture) {
-            const publicId = teamMember.picture.split("/").pop().split(".")[0];
+        if (teamMember.image) {
+            const publicId = teamMember.image.split("/").pop().split(".")[0];
             await deleteFromCloudinary(publicId);
         }
 
