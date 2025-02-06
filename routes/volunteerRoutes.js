@@ -148,7 +148,13 @@ router.put("/volunteer/:id", verifyAdmin, upload.single("picture"), async (req, 
 
 router.delete("/volunteer/:id", verifyAdmin, async (req, res) => {
   try {
-    const deletedVolunteer = await Volunteer.findByIdAndDelete(req.params.id);
+    const {id} = req.params;
+    const volunteer = await Volunteer.findById(id);
+    if (volunteer.image) {
+      const publicId = volunteer.image.split("/").pop().split(".")[0];
+      await deleteFromCloudinary(publicId);
+    }
+    const deletedVolunteer = await Volunteer.findByIdAndDelete(id);
 
     if (!deletedVolunteer) {
       return res.status(404).json({

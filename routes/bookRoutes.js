@@ -156,9 +156,9 @@ router.delete("/book/:id", verifyAdmin, async (req, res) => {
         const { id } = req.params;
 
         const book = await Books.findById(id);
-        if (book.picture) {
-            const publicId = book.picture.split("/").pop().split(".")[0];
-            await deleteFromCloudinary(publicId, book.picture);
+        if (book.image) {
+            const publicId = book.image.split("/").pop().split(".")[0];
+            await deleteFromCloudinary(publicId, book.image);
         }
 
         const deletedBook = await Books.findByIdAndDelete(id);

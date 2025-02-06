@@ -5,7 +5,7 @@ const verifyAdmin = require("../middleWare/verifyAdmin");
 const { upload } = require("../middleWare/multer.middleware");
 const { uploadOnCloudinary, deleteFromCloudinary } = require("../utils/cloudinary");
 
-router.post("/social-events", verifyAdmin, async (req, res) => {
+router.post("/social-events", verifyAdmin, upload.single("picture"), async (req, res) => {
   try {
     const { title, date, author } = req.body;
 
@@ -19,7 +19,7 @@ router.post("/social-events", verifyAdmin, async (req, res) => {
     const newEvent = new SocialEvent({ title, date, author });
     if (req.file) {
       const result = await uploadOnCloudinary(req.file.path);
-      newBook.picture = result.url;
+      newEvent.picture = result.url;
   }
     const socialEvent = await newEvent.save();
 
@@ -47,7 +47,6 @@ router.get("/social-events", async (req, res) => {
         const socialEvents = await SocialEvent.countDocuments();
 
         const event = await SocialEvent.find()
-            .sort({ createdAt: -1 })
             .skip(skip)
             .limit(per_page);
 
@@ -108,12 +107,13 @@ router.put("/social-event/:id", verifyAdmin, upload.single("picture"), async (re
 
       const updateData = {
           ...(title && { title }),
-          ...(description && { description }),
+          ...(date && { date }),
+          ...(author && { author }),
       };
 
       if (req.file) {
-          if (book.picture) {
-              const publicId = donation.picture.split("/").pop().split(".")[0];
+          if (event.picture) {
+              const publicId = event.picture.split("/").pop().split(".")[0];
               await deleteFromCloudinary(publicId);
           }
           const result = await uploadOnCloudinary(req.file.path);
